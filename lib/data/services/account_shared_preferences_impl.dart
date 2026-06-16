@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/failure/failure.dart';
@@ -10,16 +11,23 @@ import '../../domain/models/account_mapper.dart';
 import 'account_local_storage_interface.dart';
 
 final class AccountSharedPreferencesService implements IAccountLocalStorage {
-  static const String _storageKey = 'account_data';
+ 
+  String _getStorageKey() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    return 'account_data_${uid ?? "guest"}';
+  }
 
   @override
   Future<VoidResult> deleteAccount() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_storageKey);
-      return Success<void, Failure>(null);
+
+      final key = _getStorageKey();
+      await prefs.remove(key);
+
+      return Success(null);
     } catch (e) {
-      return Error<void, Failure>(
+      return Error(
         ApiLocalFailure('Shared Preferences - Erro ao deletar conta: $e'),
       );
     }
@@ -29,17 +37,19 @@ final class AccountSharedPreferencesService implements IAccountLocalStorage {
   Future<AccountResult> getAccount() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_storageKey);
 
-      if (jsonString == null || jsonString.isEmpty) {
-        return Error<Account, Failure>(EmptyResultFailure());
+      final key = _getStorageKey();
+      final result = prefs.getString(key);
+
+      if (result == null) {
+        return Error(EmptyResultFailure());
       }
 
-      final accountMap = jsonDecode(jsonString) as Map<String, dynamic>;
+      final accountMap = jsonDecode(result) as Map<String, dynamic>;
       final account = AccountMapper.fromMap(accountMap);
-      return Success<Account, Failure>(account);
+      return Success(account);
     } catch (e) {
-      return Error<Account, Failure>(
+      return Error(
         ApiLocalFailure('Shared Preferences - Erro ao obter conta: $e'),
       );
     }
@@ -50,13 +60,11 @@ final class AccountSharedPreferencesService implements IAccountLocalStorage {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      await prefs.setString(
-        _storageKey,
-        jsonEncode(AccountMapper.toMap(account)),
-      );
-      return Success<void, Failure>(null);
+      final key = _getStorageKey();
+      await prefs.setString(key, jsonEncode(AccountMapper.toMap(account)));
+      return Success(null);
     } catch (e) {
-      return Error<void, Failure>(
+      return Error(
         ApiLocalFailure('Shared Preferences - Erro ao salvar conta: $e'),
       );
     }
@@ -68,6 +76,4 @@ final class AccountSharedPreferencesService implements IAccountLocalStorage {
     // pois ele sobrescreve os dados existentes com a mesma chave.
     return saveAccount(account);
   }
-
-  // Implementação do serviço de SharedPreferences para a conta
 }
