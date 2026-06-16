@@ -1,19 +1,22 @@
 import 'dart:convert';
 
 import '../../core/failure/failure.dart';
+import '../../core/patterns/result.dart';
 import '../../core/typedefs/types_defs.dart';
-import 'character_local_storage_interface.dart';
 import '../../domain/models/character_entity.dart';
 import '../../domain/models/character_mapper.dart';
+import 'character_local_storage_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/patterns/result.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ADICIONADO: Para ler o UID atual
 
-final class CharacterSharedPreferencesService
-    implements ICharacterLocalStorage {
-  // Chave de armazenamento para os personagens
-  static const String _storageKey = 'characters';
+final class CharacterSharedPreferencesService implements ICharacterLocalStorage {
+  
+  // CORRIGIDO: Agora a chave muda dinamicamente baseada em quem está logado!
+  String _getStorageKey() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    return 'characters_data_${uid ?? "guest"}';
+  }
 
-  //fizemos//
   @override
   Future<CharacterResult> deleteCharacter(String id) async {
     try {
@@ -44,7 +47,10 @@ final class CharacterSharedPreferencesService
   Future<ListCharacterResult> getAllCharacters() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final result = prefs.getString(_storageKey);
+      
+      // CORRIGIDO: Lendo da chave dinâmica do usuário atual
+      final key = _getStorageKey();
+      final result = prefs.getString(key);
 
       if (result == null || result.isEmpty) {
         return Error(EmptyResultFailure());
@@ -64,7 +70,6 @@ final class CharacterSharedPreferencesService
     }
   }
 
-  //fizemos//
   @override
   Future<CharacterResult> updateCharacter(Character character) async {
     try {
@@ -154,7 +159,10 @@ final class CharacterSharedPreferencesService
       final jsonString = json.encode(
         characters.map((c) => CharacterMapper.toMap(c)).toList(),
       );
-      await prefs.setString(_storageKey, jsonString);
+      
+      // CORRIGIDO: Gravando na chave dinâmica baseada no usuário logado
+      final key = _getStorageKey();
+      await prefs.setString(key, jsonString);
     } catch (e) {
       throw ApiLocalFailure('Erro ao salvar personagens: $e');
     }

@@ -9,7 +9,8 @@ import '../../data/services/account_shared_preferences_impl.dart';
 import '../../data/services/auth_service_interface.dart';
 import '../../data/services/firebase_auth_service_impl.dart';
 import '../../data/services/character_local_storage_interface.dart';
-import '../../data/services/character_shared_preferences_impl.dart';
+// CORRIGIDO: Importando o novo serviço do Firestore no lugar do SharedPreferences antigo
+import '../../data/services/character_firestore_service.dart';
 import '../../domain/facades/account_facade_usecases_impl.dart';
 import '../../domain/facades/account_facade_usecases_interface.dart';
 import '../../domain/facades/character_facade_usecases_impl.dart';
@@ -24,8 +25,8 @@ import '../../presentation/controllers/characters_view_model.dart';
 import '../theme/theme_controller.dart';
 
 final injector = AutoInjector();
-void setupDependencyInjection() {
 
+void setupDependencyInjection() {
   // Regristração de dependências do Core
   injector.addSingleton<ThemeController>(ThemeController.new);
 
@@ -42,10 +43,10 @@ void setupDependencyInjection() {
   injector.addSingleton<IUpdateAccountUseCase>(UpdateAccountUseCaseImpl.new);
   injector.addSingleton<IAccountFacadeUseCases>(AccountFacadeUsecasesImpl.new);
 
-  
   // Regristração de dependências para Character
   // Repositories e serviços
-  injector.addSingleton<ICharacterLocalStorage>(CharacterSharedPreferencesService.new);
+  // CORRIGIDO: Injetando o CharacterFirestoreService para salvar os dados na nuvem
+  injector.addSingleton<ICharacterLocalStorage>(CharacterFirestoreService.new);
   injector.addSingleton<ICharacterRepository>(CharacterRepositoryImpl.new);
 
   // UseCases antes da Facade
@@ -54,13 +55,11 @@ void setupDependencyInjection() {
   injector.addSingleton<ISaveCharacterUseCase>(SaveCharacterUseCaseImpl.new);
   injector.addSingleton<IDeleteCharacterUseCase>(DeleteCharacterUseCaseImpl.new);
 
-  //adicionamos//
+  // adicionamos
   injector.addSingleton<IUpdateCharacterUseCase>(UpdateCharacterUseCaseImpl.new);
 
   // Facade depois de todos os usecases
   injector.addSingleton<ICharacterFacadeUseCases>(CharacterFacadeUseCasesImpl.new);
-
-  
 
   // viewmodels
   // Account viewmodel

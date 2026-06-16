@@ -129,9 +129,10 @@ class AppDrawer extends StatelessWidget {
                   ? () {
                       context.pop();
 
-                      Account account = _vmAccount.accountState.state.value!;
+                      // Removido o operador '!' para evitar o erro de conversão nula
+                      final account = _vmAccount.accountState.state.value;
 
-                      if (currentRoute != AppPaths.characters) {
+                      if (account != null && currentRoute != AppPaths.characters) {
                         context.goNamed(
                           AppRouteNames.characters,
                           extra: account,
@@ -181,16 +182,16 @@ class AppDrawer extends StatelessWidget {
             onTap: () async {
               context.pop();
 
-              // 1. Limpa os dados de CONTA e PERSONAGENS da memória local (Signals)
+              // Desloga do Firebase primeiro para o Stream do main interceptar o estado limpo
+              await FirebaseAuth.instance.signOut();
+
+              // Limpa os dados de CONTA e PERSONAGENS da memória local (Signals)
               _vmAccount.clearAccountData();
               _vmCharacters.clearCharactersData();
 
-              // 2. Termina a sessão do Firebase Auth
-              await FirebaseAuth.instance.signOut();
-
-              // 3. Joga o usuário de volta na tela de login
+              // CORRIGIDO: Redireciona para o caminho mapeado correto do Login
               if (context.mounted) {
-                context.go('/');
+                context.go(AppPaths.login);
               }
             },
           ),

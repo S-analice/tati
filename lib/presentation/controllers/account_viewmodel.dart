@@ -12,14 +12,8 @@ class AccountViewModel {
   /// dispara os commands e effects e observa as mudanças de estado
   late final AccountCommandsViewmodel commands;
 
-  /// Construtor que inicializa a VieModel principal
-  /// que será consumida na UI
-  /// injeta a dependência do Facade dos casos de uso de Account
-  /// o facade sera consumiro pelos commands
-
   AccountViewModel(IAccountFacadeUseCases facade) {
     _state = AccountStateViewModel();
-    // dispara os commands e effects
     commands = AccountCommandsViewmodel(
       state: _state,
       saveAccountCommand: SaveAccountCommand(facade),
@@ -28,6 +22,12 @@ class AccountViewModel {
       deleteAccountCommand: DeleteAccountCommand(facade),
     );
   }
+
+  /// Limpa os dados do cache de conta armazenados na memória
+  void clearAccountData() {
+    accountState.state.value = null;
+  }
+
   // --- Comandos expostos ---
   GetAccountCommand get getAccountCommand => commands.getAccountCommand;
   SaveAccountCommand get saveAccountCommand => commands.saveAccountCommand;

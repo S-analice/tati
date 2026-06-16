@@ -11,6 +11,9 @@ final class FirebaseAuthServiceImpl implements IAuthService {
   FirebaseAuthServiceImpl({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
 
   @override
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  @override
   Future<Result<Account, Failure>> login({
     required String email,
     required String password,
