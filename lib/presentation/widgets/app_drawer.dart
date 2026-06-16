@@ -1,17 +1,20 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:signals_flutter/signals_flutter.dart';
+
 import '../../core/di/dependency_injection.dart';
 import '../../core/routes/app_routes.dart';
 import '../../domain/models/account_entity.dart';
 import '../controllers/account_viewmodel.dart';
-import 'package:signals_flutter/signals_flutter.dart';
-
+import '../controllers/characters_view_model.dart';
 
 /// Drawer reutilizável para navegação entre páginas
 class AppDrawer extends StatelessWidget {
   AppDrawer({super.key});
 
   final _vmAccount = injector.get<AccountViewModel>();
+  final _vmCharacters = injector.get<CharactersViewModel>();
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +41,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Injusce 2 Mobile',
+                  'Injustice 2 Mobile',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSecondary,
                   ),
@@ -49,14 +52,12 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.home,
-              // color: currentRoute == AppRoutes.home
               color: currentRoute == AppPaths.home
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSecondary,
             ),
             title: Text(
               'Início',
-              // style: currentRoute == AppRoutes.home
               style: currentRoute == AppPaths.home
                   ? TextStyle(
                       fontWeight: FontWeight.bold,
@@ -143,7 +144,6 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: Icon(
               Icons.info,
-              // color: Theme.of(context).colorScheme.onSecondary,
               color: currentRoute == AppPaths.about
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSecondary,
@@ -162,6 +162,35 @@ class AppDrawer extends StatelessWidget {
               context.pop();
               if (currentRoute != AppPaths.about) {
                 context.goNamed(AppRouteNames.about);
+              }
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(
+              Icons.logout,
+              color: Colors.redAccent,
+            ),
+            title: const Text(
+              'Sair da Conta',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () async {
+              context.pop();
+
+              // 1. Limpa os dados de CONTA e PERSONAGENS da memória local (Signals)
+              _vmAccount.clearAccountData();
+              _vmCharacters.clearCharactersData();
+
+              // 2. Termina a sessão do Firebase Auth
+              await FirebaseAuth.instance.signOut();
+
+              // 3. Joga o usuário de volta na tela de login
+              if (context.mounted) {
+                context.go('/');
               }
             },
           ),
